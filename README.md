@@ -18,24 +18,19 @@
 - 🗑️ **Eliminación segura** con confirmación
 - 📱 **Diseño responsive** y Material Design
 
-## 🎯 Vista Previa
+## 📱 Capturas de Pantalla
 
-```
-┌─────────────────────────┐
-│  📱 Lista de Tareas     │
-├─────────────────────────┤
-│  📊 Progreso            │
-│  ▓▓▓▓▓░░░░░ 25%         │
-│  🔶 3 pendientes        │
-│  ✅ 1 completadas       │
-├─────────────────────────┤
-│  🔍 Buscar tareas...    │
-├─────────────────────────┤
-│  ☐ Ir a la U           │
-│  ☐ Comprar despensa    │
-│  ☑ Estudiar Flutter    │
-└─────────────────────────┘
-```
+<p align="center">
+  <img src="screenshots/app-main.png" alt="Pantalla Principal" width="250"/>
+  <img src="screenshots/app-search.png" alt="Búsqueda" width="250"/>
+  <img src="screenshots/app-edit.png" alt="Edición de Tarea" width="250"/>
+</p>
+
+### Funcionalidades Visuales
+
+- **Pantalla Principal**: Lista de tareas con estadísticas y progreso
+- **Búsqueda**: Filtrado en tiempo real de tareas
+- **Edición**: Modal para crear y editar tareas con validación
 
 ## 🛠️ Tecnologías Utilizadas
 
