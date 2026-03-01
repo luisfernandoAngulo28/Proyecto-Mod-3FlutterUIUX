@@ -17,6 +17,7 @@ class _TaskListPageState extends State<TaskListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [const _Header(), Expanded(child: _TaskList(key: _taskListKey))],
@@ -152,39 +153,41 @@ class _TaskModalState extends State<_TaskModal> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(21)),
           color: Colors.white,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            H1(widget.task == null ? 'Nueva tarea' : 'Editar tarea'),
-            const SizedBox(height: 26),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              maxLength: maxLength,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              H1(widget.task == null ? 'Nueva tarea' : 'Editar tarea'),
+              const SizedBox(height: 26),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                maxLength: maxLength,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  hintText: 'Descripción de la tarea',
+                  errorText: errorMessage,
+                  counterText: '${_controller.text.length}/$maxLength',
                 ),
-                hintText: 'Descripción de la tarea',
-                errorText: errorMessage,
-                counterText: '${_controller.text.length}/$maxLength',
+                onChanged: (_) {
+                  if (errorMessage != null) {
+                    setState(() => errorMessage = null);
+                  }
+                },
               ),
-              onChanged: (_) {
-                if (errorMessage != null) {
-                  setState(() => errorMessage = null);
-                }
-              },
-            ),
-            const SizedBox(height: 26),
-            ElevatedButton(
-              onPressed: _saveTask,
-              child: const Text('Guardar'),
-            ),
-          ],
+              const SizedBox(height: 26),
+              ElevatedButton(
+                onPressed: _saveTask,
+                child: const Text('Guardar'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -378,7 +381,7 @@ class _TaskListState extends State<_TaskList> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,60 +424,67 @@ class _TaskListState extends State<_TaskList> {
             ),
             const SizedBox(height: 16),
           ],
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: taskList.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.task_alt,
-                          size: 80,
-                          color: Colors.grey[300],
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No hay tareas',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: taskList.isEmpty
+                ? SizedBox(
+                    height: 400,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.task_alt,
+                            size: 80,
+                            color: Colors.grey[300],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '¡Agrega tu primera tarea!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No hay tareas',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            '¡Agrega tu primera tarea!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 : filteredTaskList.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 80,
-                              color: Colors.grey[300],
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No se encontraron tareas',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey,
+                    ? SizedBox(
+                        height: 400,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 80,
+                                color: Colors.grey[300],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No se encontraron tareas',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: filteredTaskList.length,
                         itemBuilder: (_, index) {
                           final task = filteredTaskList[index];
@@ -494,7 +504,6 @@ class _TaskListState extends State<_TaskList> {
                           );
                         },
                       ),
-            ),
           ),
         ],
       ),
