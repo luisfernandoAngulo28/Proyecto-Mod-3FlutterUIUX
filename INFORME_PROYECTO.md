@@ -773,6 +773,14 @@ Formatted 8 files (0 changed) in 0.42 seconds.
    - Documentación con README profesional
    - Gestión de assets y screenshots
 
+### Reflexión Personal
+
+Esta aplicación me diverti mucho haciéndola. Primero hicimos el diseño en Figma, y ahí fue donde todo empezó a tomar forma. Me gustó jugar con los colores, las fuentes y ver cómo iba quedando la interfaz antes de tocar código.
+
+De Figma pasamos a Flutter, y ahí fue increíble ver cómo lo que habíamos diseñado cobraba vida. El hot reload me salvó la vida porque podía ir probando cambios al instante. Luego vino la parte de SQLite para guardar las tareas, y eso fue un reto. Al principio no entendía bien cómo funcionaba la persistencia de datos, pero cuando finalmente vi que las tareas se guardaban y aparecían después de cerrar y abrir la app, fue muy satisfactorio.
+
+Es bonita la sensación cuando finalmente le entiendes a algo que alguna vez viste complejo. Ver cómo todo encaja y cobra sentido es increíble. Los errores que me salieron (el del teclado, lo de Impeller) al principio me frustraron, pero cada uno me enseñó algo nuevo. Ahora me siento más seguro para hacer más aplicaciones con Flutter y SQLite.
+
 ### Impacto del Proyecto
 
 **Técnico:**
@@ -959,6 +967,313 @@ flutter run --profile
 - [Dart Language Tour](https://dart.dev/guides/language/language-tour)
 - [Flutter Best Practices](https://flutter.dev/docs/perf/best-practices)
 
+### D. Sugerencias Específicas de Mejora
+
+Basándome en el desarrollo actual, estas son las mejoras más viables y con mayor impacto:
+
+#### 🎯 Alta Prioridad (Implementación: 1-3 días)
+
+**1. Prioridades de Tareas (Alta/Media/Baja)**
+```dart
+class Task {
+  final TaskPriority priority; // enum: high, medium, low
+  
+  Color get priorityColor {
+    switch (priority) {
+      case TaskPriority.high: return Colors.red;
+      case TaskPriority.medium: return Colors.orange;
+      case TaskPriority.low: return Colors.green;
+    }
+  }
+}
+```
+- **Impacto:** Organización visual inmediata
+- **Esfuerzo:** Bajo (modificar modelo + UI)
+- **Valor agregado:** Alto para productividad
+
+**2. Ordenamiento de Tareas**
+- Por fecha de creación (más reciente primero)
+- Por estado (pendientes primero)
+- Por prioridad (altas primero)
+- Por alfabético (A-Z)
+
+```dart
+enum SortOption { recent, pending, priority, alphabetic }
+
+void _sortTasks(SortOption option) {
+  setState(() {
+    switch (option) {
+      case SortOption.pending:
+        taskList.sort((a, b) => a.done ? 1 : -1);
+        break;
+      case SortOption.alphabetic:
+        taskList.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      // ...
+    }
+  });
+}
+```
+
+**3. Filtros Rápidos (Chips)**
+```dart
+Wrap(
+  spacing: 8,
+  children: [
+    FilterChip(
+      label: Text('Todas'),
+      selected: filter == TaskFilter.all,
+      onSelected: (_) => _setFilter(TaskFilter.all),
+    ),
+    FilterChip(
+      label: Text('Pendientes'),
+      selected: filter == TaskFilter.pending,
+      onSelected: (_) => _setFilter(TaskFilter.pending),
+    ),
+    FilterChip(
+      label: Text('Completadas'),
+      selected: filter == TaskFilter.completed,
+      onSelected: (_) => _setFilter(TaskFilter.completed),
+    ),
+  ],
+)
+```
+
+#### 🔧 Media Prioridad (Implementación: 3-7 días)
+
+**4. Fechas Límite con Notificaciones Visuales**
+```dart
+class Task {
+  final DateTime? dueDate;
+  
+  bool get isOverdue => dueDate != null && 
+                        DateTime.now().isAfter(dueDate!) && 
+                        !done;
+  
+  bool get isDueSoon => dueDate != null && 
+                        dueDate!.difference(DateTime.now()).inHours < 24;
+}
+
+// En la UI
+if (task.isOverdue) {
+  return Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.red, width: 2),
+      // ...
+    ),
+  );
+}
+```
+
+**5. Subtareas (Checkboxes anidados)**
+```dart
+class Task {
+  final List<SubTask> subtasks;
+  
+  double get completionPercentage {
+    if (subtasks.isEmpty) return done ? 1.0 : 0.0;
+    return subtasks.where((s) => s.done).length / subtasks.length;
+  }
+}
+
+// UI con expansión
+ExpansionTile(
+  title: Text(task.title),
+  children: task.subtasks.map((sub) => CheckboxListTile(...)).toList(),
+)
+```
+
+**6. Modo Oscuro con Persistencia**
+```dart
+// Guardar preferencia en SharedPreferences
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+  
+  ThemeMode get themeMode => _themeMode;
+  
+  void toggleTheme() {
+    _themeMode = _themeMode == ThemeMode.light 
+        ? ThemeMode.dark 
+        : ThemeMode.light;
+    _savePreference();
+    notifyListeners();
+  }
+}
+```
+
+#### 🚀 Baja Prioridad (Implementación: 1-2 semanas)
+
+**7. Gestos Avanzados**
+- **Reordenar:** `ReorderableListView` para drag & drop
+- **Swipe derecha:** Marcar como completada rápidamente
+- **Doble tap:** Edición rápida inline
+
+**8. Exportar/Importar Datos**
+```dart
+Future<void> exportToJSON() async {
+  final tasks = await DatabaseHelper.instance.readAllTasks();
+  final json = jsonEncode(tasks.map((t) => t.toMap()).toList());
+  
+  final file = File('${await getApplicationDocumentsDirectory()}/tasks_backup.json');
+  await file.writeAsString(json);
+  
+  // Compartir archivo
+  await Share.shareFiles([file.path], text: 'Backup de tareas');
+}
+```
+
+**9. Sincronización en la Nube (Firebase)**
+- Autenticación con Google/Email
+- Firestore para almacenamiento
+- Sync automático en background
+
+```dart
+// Híbrido: SQLite local + Firestore remoto
+class TaskRepository {
+  Future<void> syncWithCloud() async {
+    final localTasks = await DatabaseHelper.instance.readAllTasks();
+    final cloudTasks = await FirebaseFirestore.instance
+        .collection('tasks')
+        .where('userId', isEqualTo: currentUserId)
+        .get();
+    
+    // Resolver conflictos por timestamp
+    // Actualizar local o remoto según sea necesario
+  }
+}
+```
+
+#### 🎨 Mejoras de UX/UI
+
+**10. Onboarding para Nuevos Usuarios**
+```dart
+// Mostrar tutorial en primer uso
+PageView(
+  children: [
+    OnboardingPage(
+      title: 'Bienvenido',
+      description: 'Gestiona tus tareas fácilmente',
+      image: Icons.task_alt,
+    ),
+    OnboardingPage(
+      title: 'Búsqueda rápida',
+      description: 'Encuentra tareas al instante',
+      image: Icons.search,
+    ),
+    // ...
+  ],
+)
+```
+
+**11. Badges/Logros Gamificados**
+- 🏆 "Primera tarea" - Crea tu primera tarea
+- 🔥 "Racha de 7 días" - Completa tareas 7 días seguidos
+- ⚡ "Productivo" - Completa 20 tareas en un día
+- 🎯 "Perfeccionista" - 100% de tareas completadas en una semana
+
+**12. Widgets Personalizables**
+```dart
+// Configuración de apariencia
+class AppSettings {
+  bool showCompletedTasks = true;
+  bool showStatistics = true;
+  int tasksPerPage = 20;
+  bool enableAnimations = true;
+  bool compactView = false;
+}
+```
+
+#### 📊 Analíticas y Reportes
+
+**13. Dashboard de Productividad**
+- Gráfico de tareas completadas por semana (fl_chart)
+- Promedio de tareas diarias
+- Días más productivos
+- Categorías más frecuentes
+
+```dart
+// Usando fl_chart package
+LineChart(
+  LineChartData(
+    lineBarsData: [
+      LineChartBarData(
+        spots: tasksPerDay.entries.map((e) => 
+          FlSpot(e.key.toDouble(), e.value.toDouble())
+        ).toList(),
+      ),
+    ],
+  ),
+)
+```
+
+#### 🔐 Seguridad y Privacidad
+
+**14. Bloqueo con PIN/Biometría**
+```dart
+// local_auth package
+Future<bool> authenticate() async {
+  return await localAuth.authenticate(
+    localizedReason: 'Autentícate para acceder a tus tareas',
+    options: const AuthenticationOptions(
+      biometricOnly: false,
+      stickyAuth: true,
+    ),
+  );
+}
+```
+
+#### 🌐 Características Colaborativas
+
+**15. Compartir Tareas con Otros Usuarios**
+- Listas compartidas con permisos
+- Asignación de tareas a miembros
+- Notificaciones de cambios
+- Chat por tarea
+
+---
+
+### E. Roadmap Sugerido (6 meses)
+
+| Mes | Enfoque | Mejoras Principales |
+|-----|---------|---------------------|
+| **Mes 1** | Funcionalidad Core | Prioridades, Ordenamiento, Filtros |
+| **Mes 2** | Experiencia Temporal | Fechas límite, Calendario, Recordatorios |
+| **Mes 3** | Personalización | Modo oscuro, Temas, Configuración |
+| **Mes 4** | Datos Avanzados | Subtareas, Categorías, Etiquetas |
+| **Mes 5** | Cloud & Sync | Firebase, Auth, Sincronización |
+| **Mes 6** | Colaboración | Compartir listas, Notificaciones |
+
+---
+
+### F. Métricas de Éxito para Futuras Iteraciones
+
+**KPIs Técnicos:**
+- ✅ Tiempo de carga < 2s
+- ✅ Crash rate < 1%
+- ✅ Cobertura de tests > 80%
+- ✅ Performance: 60 FPS constantes
+
+**KPIs de Usuario:**
+- 📈 Retención día 1 > 40%
+- 📈 Retención día 7 > 20%
+- 📈 Tiempo promedio de sesión > 3 min
+- 📈 NPS (Net Promoter Score) > 50
+
+**KPIs de Negocio:**
+- 💰 Costo de adquisición < $2
+- 💰 Valor de vida del usuario > $10
+- 💰 Conversión a premium > 5%
+
+---
+
+## 🎓 Lecciones Aprendidas para Próximos Proyectos
+
+1. **Diseñar primero, codificar después** - Figma ahorró tiempo y refactorizaciones
+2. **Empezar simple, iterar rápido** - MVP funcional antes de features complejas
+3. **Documentar mientras desarrollas** - Más fácil que documentar al final
+4. **Testing desde el inicio** - Previene regresiones y da confianza
+5. **Feedback temprano** - Compartir con usuarios reales lo antes posible
+
 ---
 
 ## 📝 Notas Finales
@@ -973,9 +1288,17 @@ Este informe documenta el desarrollo completo de la aplicación Lista de Tareas 
 
 El código fuente completo está disponible en GitHub y la aplicación está lista para deploy en Play Store con mejoras adicionales.
 
+**Próximos pasos recomendados:**
+1. Implementar testing unitario y de integración
+2. Agregar prioridades y ordenamiento (Quick Win)
+3. Configurar CI/CD con GitHub Actions
+4. Publicar versión beta en Play Store
+5. Recopilar feedback de usuarios reales
+
 ---
 
 **Fecha de elaboración:** 01 de marzo de 2026  
-**Versión del informe:** 1.0  
-**Estado del proyecto:** ✅ Completado y funcional
+**Versión del informe:** 1.1  
+**Estado del proyecto:** ✅ Completado y funcional  
+**Mantenimiento:** 🔄 Activo
 
